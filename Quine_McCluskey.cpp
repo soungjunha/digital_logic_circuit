@@ -9,10 +9,13 @@ using namespace std;
 class Term
 {
 public:
-	Term(bool is_minterm, int term) :is_minterm(is_minterm), term(term) {}
+	Term(bool is_minterm, int term) :is_minterm(is_minterm), term(term),is_prime(true) {}
 	~Term();
 	int get_term() { return term; }
+	string get_bin_term(int bit);
 	//bool operator==(const Term& other);
+
+	bool is_prime;
 
 private:
 	bool is_minterm; //minterm여부
@@ -21,6 +24,14 @@ private:
 
 Term::~Term()
 {
+}
+
+string Term::get_bin_term(int bit) {
+	string result;
+	for (int i = bit-1; i >= 0; --i) {
+		result += (term & (1 << i)) ? '1' : '0';
+	}
+	return result;
 }
 
 class Implement
@@ -33,8 +44,7 @@ public:
 private:
 	vector<Term> terms;
 	int mask;
-	bool only_dont_care;
-	bool is_prime;
+	bool only_dont_care;//don't care term 만으로 이루어졌는지 여부
 };
 
 Implement::Implement(int mask, Term term) :mask(mask)
@@ -78,19 +88,19 @@ int main() {
 
 	for (int i = 0; i < terms.size() - 1; i++)
 	{
-		bool is_prime = true;
 		for (int j = i + 1; j < terms.size(); j++)
 		{
 			int diff = terms[i].get_term() ^ terms[j].get_term();
 			if (!(diff & (diff - 1))) {
 				Implement buffer(diff, terms[i], terms[j]);
 				implements[0].push_back(buffer);
-				if (is_prime) is_prime = false;
+				terms[i].is_prime = terms[j].is_prime = false;
 			}
 		}
-		if (is_prime) {
+		if (terms[i].is_prime) {
 			Implement buffer(0, terms[i]);
 			prime_implements.push_back(buffer);
 		}
 	}
+
 }
