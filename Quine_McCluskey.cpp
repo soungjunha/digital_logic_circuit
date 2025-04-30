@@ -9,14 +9,14 @@ using namespace std;
 class Term
 {
 public:
-    Term(bool is_minterm, string term) :is_minterm(is_minterm), term(term) {}
+    Term(bool is_minterm, int term) :is_minterm(is_minterm), term(term) {}
     ~Term();
-    string get_term() { return term; }
+    int get_term() { return term; }
     //bool operator==(const Term& other);
 
 private:
-    bool is_minterm;
-    string term;
+    bool is_minterm; //minterm¿©ºÎ
+    int term;
 
 };
 
@@ -24,23 +24,25 @@ Term::~Term()
 {
 }
 
-class Group
+class Implement
 {
 public:
-    Group();
-    ~Group();
+    Implement(int mask, Term term1, Term term2);
+    ~Implement();
 
 private:
-    string term;
-    vector<int> minterms;
+    vector<Term> terms;
+    int mask;
     bool only_dont_care;
 };
 
-Group::Group()
+Implement::Implement(int mask=0, Term term1, Term term2):mask(mask)
 {
+    terms.push_back(term1);
+    terms.push_back(term2);
 }
 
-Group::~Group()
+Implement::~Implement()
 {
 }
 
@@ -53,25 +55,36 @@ int main() {
 
     int bit = stoi(line);
     vector<Term> terms;
-    vector<Group> groups;
+    vector<vector<Implement>> implements;
+    vector<Implement> prime_implements;
 
     cout << bit << endl;
     if (infile.is_open()) {
         while (getline(infile, line)) {
-            Term buffer(line[0] == 'm', line.substr(2));
+            Term buffer(line[0] == 'm', stoi(line.substr(2), nullptr, 2));
             terms.push_back(buffer);
+            //cout << buffer.get_term() << endl;
         }
         infile.close();
     }
     else {
         cerr << "Error: Failed to open file 'input_minterm.txt'" << endl;
     }
-
-    for (int i = 0; i < terms.capacity(); i++)
+    
+    for (int i = 0; i < terms.size(); i++)
     {
-        for (int j = i + 1; j < terms.capacity(); j++)
+        bool is_prime=true;
+        for (int j = i + 1; j < terms.size(); j++)
         {
-
+            int diff = terms[i].get_term() ^ terms[j].get_term();
+            if (!(diff & (diff - 1))) {
+                Implement buffer(diff, terms[i], terms[j]);
+                implements[0].push_back(buffer);
+                if (is_prime) is_prime = false;
+            }
+        }
+        if (is_prime) {
+            prime_implements.push_back(terms[i]);
         }
     }
 
