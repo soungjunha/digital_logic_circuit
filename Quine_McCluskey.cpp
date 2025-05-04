@@ -4,6 +4,10 @@
 #include<cmath>
 #include <vector>
 #include <algorithm>
+#include <map>
+#include <set>
+#include <limits>
+#include <bitset>
 
 using namespace std;
 
@@ -14,7 +18,7 @@ public:
 	~Term();
 	int get_term() const { return term; }
 	bool get_is_minterm() { return is_minterm; }
-	string get_bin_term(int bit);
+	string get_bin_term(int bit)const;
 
 	bool is_prime;
 
@@ -27,7 +31,7 @@ Term::~Term()
 {
 }
 
-string Term::get_bin_term(int bit) {
+string Term::get_bin_term(int bit) const {
 	string result;
 	for (int i = bit - 1; i >= 0; --i) {
 		result += (term & (1 << i)) ? '1' : '0';
@@ -148,6 +152,125 @@ void removeRedundantTerms(vector<Implement>& prime_implements) {
 
 }
 
+void generateCoverChart(const vector<Implement>& primeImpls, const vector<Term>& minterms, vector<vector<bool>>& chart, map<int, vector<int>>& coverMap)
+{
+	int P = primeImpls.size();
+	int M = minterms.size();
+	chart.assign(P, std::vector<bool>(M, false));
+	coverMap.clear();
+
+	for (int i = 0; i < P; ++i) {
+		int mask = primeImpls[i].get_mask();
+		int value = primeImpls[i].get_terms()[0].get_term();
+		for (int j = 0; j < M; ++j) {
+			int m = minterms[j].get_term();
+			if ((m & ~mask) == (value & ~mask)) {
+				chart[i][j] = true;
+				coverMap[i].push_back(j);
+			}
+		}
+	}
+}
+
+vector<int> findEssentialPIs(const vector<vector<bool>>& chart) {
+	int P = chart.size();
+	if (P == 0) return {};
+	int M = chart[0].size();
+
+	vector<bool> isEssential(P, false);
+
+	for (int j = 0; j < M; ++j) {
+		int count = 0, lastRow = -1;
+		for (int i = 0; i < P; ++i) {
+			if (chart[i][j]) {
+				++count;
+				lastRow = i;
+			}
+		}
+		if (count == 1) {
+			isEssential[lastRow] = true;
+		}
+	}
+
+	vector<int> essentialIdx;
+	for (int i = 0; i < P; ++i) {
+		if (isEssential[i]) essentialIdx.push_back(i);
+	}
+	return essentialIdx;
+}
+
+void removeEssentialCoverage(vector<vector<bool>>& chart, const map<int, vector<int>>& coverMap, const vector<int>& essentialIdx)
+{
+	for (int pi : essentialIdx) {
+		auto it = coverMap.find(pi);
+		if (it == coverMap.end()) continue;
+		for (int col : it->second) {
+			for (auto& row : chart) {
+				row[col] = false;
+			}
+		}
+	}
+}
+
+vector<vector<int>> buildPetrick(const vector<vector<bool>>& chart) {
+	vector<vector<int>> sums;
+	for (int j = 0; j < (int)chart[0].size(); ++j) {
+		vector<int> termCover;
+		for (int i = 0; i < (int)chart.size(); ++i)
+			if (chart[i][j]) termCover.push_back(i);
+		if (!termCover.empty()) sums.push_back(termCover);
+	}
+	if (sums.empty()) return {};
+
+	vector<set<int>> products;
+	for (int pi : sums[0])
+		products.push_back({ pi });
+
+	for (int k = 1; k < (int)sums.size(); ++k) {
+		vector<set<int>> next;
+		for (const auto& prod : products)
+			for (int pi : sums[k]) {
+				auto np = prod;
+				np.insert(pi);
+				next.push_back(np);
+			}
+		vector<set<int>> filtered;
+		for (const auto& s : next) {
+			bool absorbed = false;
+			for (const auto& t : next)
+				if (s != t && includes(s.begin(), s.end(),
+					t.begin(), t.end())) {
+					absorbed = true;
+					break;
+				}
+			if (!absorbed) filtered.push_back(s);
+		}
+		products = move(filtered);
+	}
+
+	vector<vector<int>> combos;
+	for (const auto& s : products)
+		combos.emplace_back(s.begin(), s.end());
+	return combos;
+}
+
+vector<int> selectMinCombination(const vector<vector<int>>& combos) {
+	size_t bestSize = numeric_limits<size_t>::max();
+	for (const auto& c : combos)
+		bestSize = min(bestSize, c.size());
+	for (const auto& c : combos)
+		if (c.size() == bestSize) return c;
+	return {};
+}
+
+int popcount_manual(int x, int bits) {
+	int cnt = 0;
+	for (int b = 0; b < bits; ++b) {
+		cnt += (x >> b) & 1;
+	}
+	return cnt;
+}
+
 int main() {
 	ifstream infile(".\\input_minterm.txt");
 	string line;
@@ -238,6 +361,70 @@ int main() {
 		if (prime_implements[i].get_only_dont_care()) prime_implements.erase(prime_implements.begin() + i);
 	}
 
+	for (int i = terms.size() - 1; i >= 0; --i) {
+		if (!terms[i].get_is_minterm()) terms.erase(terms.begin() + i);
+	}
 
+	vector<vector<bool>> chart;
+	map<int, vector<int>> coverMap;
+	generateCoverChart(prime_implements, terms, chart, coverMap);
+
+	vector<int> essentialIdx = findEssentialPIs(chart);
+
+	cout << "Essential Prime Implicants indices: ";
+	for (int i = 0; i < essentialIdx.size(); ++i) {
+		int piIndex = essentialIdx[i];
+		cout << prime_implements[piIndex].get_terms()[0].get_bin_term(bit) << " ";
+	}
+	cout << endl;
+
+	removeEssentialCoverage(chart, coverMap, essentialIdx);
+
+	auto combos = buildPetrick(chart);
+	auto petSelect = selectMinCombination(combos);
+
+	// 4) 최종 PI 집합
+	set<int> finalSet(essentialIdx.begin(), essentialIdx.end());
+	finalSet.insert(petSelect.begin(), petSelect.end());
+
+	// 5) 결과 출력
+	ofstream fout("result.txt");
+	int totalCost = 0;
+	vector<int> finalList(finalSet.begin(), finalSet.end());
+	vector<bool> invertor_flag(bit);
+
+	// 전통적인 for문: int i = 0; 조건; i++ 형태
+	for (int i = 0; i < static_cast<int>(finalList.size()); ++i) {
+		int idx = finalList[i];                       // i번째 요소 얻기
+		const auto& impl = prime_implements[idx];     // 해당 prime implicant 참조
+
+		int mask = impl.get_mask();
+		int value = impl.get_terms()[0].get_term();
+
+		string pat;
+		for (int b = bit - 1; b >= 0; --b) {
+			if (mask & (1 << b)) {
+				pat.push_back('_');
+			}
+			else {
+				if (value & (1 << b))
+					pat.push_back('1');
+				else {
+					pat.push_back('0');
+					if (!invertor_flag[bit - b - 1]) {
+						invertor_flag[bit - b - 1] = true;
+						totalCost += 2;
+					}
+				}
+			}
+		}
+		fout << pat << "\n";
+
+		int dashCount = bitset<64>(mask).count();
+		totalCost += (2 * (bit - dashCount) + 2);
+	}
+	totalCost += (2 * finalSet.size() + 2);
+	fout << "Cost (# of transistors): " << totalCost << "\n";
+	fout.close();
 
 }
