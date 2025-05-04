@@ -1,11 +1,11 @@
-#include <iostream>   // 입출력 스트림 사용
+#include <iostream>
 #include <string>     // 문자열 처리
 #include <fstream>    // 파일 입출력
 #include <cmath>      // 수학 함수
 #include <vector>     // 동적 배열
 #include <algorithm>  // 정렬, unique 등
-#include <map>        // 맵 컨테이너
-#include <set>        // 셋 컨테이너
+#include <map>        // map 컨테이너
+#include <set>        // set 컨테이너
 #include <limits>     // 수치 한계값
 #include <bitset>     // 비트셋
 
@@ -340,7 +340,7 @@ int main() {
     for (int i = 0; i < terms.size(); ++i) {
         for (int j = i + 1; j < terms.size(); ++j) {
             int diff = terms[i].get_term() ^ terms[j].get_term();
-            // diff가 한 비트만 다르면 combine
+            // diff가 한 비트만 다르면 결합
             if (!(diff & (diff - 1))) {
                 groups[0].emplace_back(diff, terms[i], terms[j]);
                 terms[i].is_prime = terms[j].is_prime = false;
@@ -449,9 +449,9 @@ int main() {
         }
         fout << pattern << "\n";
         int dashCount = bitset<64>(mask).count();
-        totalCost += (2 * (bit - dashCount) + 2); // AND 게이트 비용
+        if ((bit - dashCount) > 1) totalCost += (2 * (bit - dashCount) + 2); // AND 게이트 비용
     }
-    totalCost += (2 * finalSet.size() + 2); // 최종 OR 게이트 비용
+    if(finalSet.size()>1) totalCost += (2 * finalSet.size() + 2); // 최종 OR 게이트 비용
     fout << "Cost (# of transistors): " << totalCost << "\n";
     fout.close();
 
