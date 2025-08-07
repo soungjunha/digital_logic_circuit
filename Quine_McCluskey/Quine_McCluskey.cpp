@@ -1,76 +1,76 @@
 #include <iostream>
-#include <string>     // ¹®ÀÚ¿­ Ã³¸®
-#include <fstream>    // ÆÄÀÏ ÀÔÃâ·Â
-#include <cmath>      // ¼öÇĞ ÇÔ¼ö
-#include <vector>     // µ¿Àû ¹è¿­
-#include <algorithm>  // Á¤·Ä, unique µî
-#include <map>        // map ÄÁÅ×ÀÌ³Ê
-#include <set>        // set ÄÁÅ×ÀÌ³Ê
-#include <limits>     // ¼öÄ¡ ÇÑ°è°ª
-#include <bitset>     // ºñÆ®¼Â
+#include <string>     // ë¬¸ìì—´ ì²˜ë¦¬
+#include <fstream>    // íŒŒì¼ ì…ì¶œë ¥
+#include <cmath>      // ìˆ˜í•™ í•¨ìˆ˜
+#include <vector>     // ë™ì  ë°°ì—´
+#include <algorithm>  // ì •ë ¬, unique ë“±
+#include <map>        // map ì»¨í…Œì´ë„ˆ
+#include <set>        // set ì»¨í…Œì´ë„ˆ
+#include <limits>     // ìˆ˜ì¹˜ í•œê³„ê°’
+#include <bitset>     // ë¹„íŠ¸ì…‹
 
 using namespace std;
 
 // -----------------------------
-// Term Å¬·¡½º
-// - minterm ¶Ç´Â don't care(term) Á¤º¸¸¦ ÀúÀå ¹× 2Áø¼ö ¹®ÀÚ¿­ ¹İÈ¯
+// Term í´ë˜ìŠ¤
+// - minterm ë˜ëŠ” don't care(term) ì •ë³´ë¥¼ ì €ì¥ ë° 2ì§„ìˆ˜ ë¬¸ìì—´ ë°˜í™˜
 // -----------------------------
 class Term {
 public:
-    // »ı¼ºÀÚ: is_minterm=true¸é ½ÇÁ¦ minterm, false¸é don't care
+    // ìƒì„±ì: is_minterm=trueë©´ ì‹¤ì œ minterm, falseë©´ don't care
     Term(bool is_minterm, int term)
         : is_minterm(is_minterm), term(term), is_prime(true) {
     }
     ~Term() {}
 
-    // term °ªÀ» Á¤¼ö·Î ¹İÈ¯
+    // term ê°’ì„ ì •ìˆ˜ë¡œ ë°˜í™˜
     int get_term() const { return term; }
-    // minterm ¿©ºÎ ¹İÈ¯
+    // minterm ì—¬ë¶€ ë°˜í™˜
     bool get_is_minterm() const { return is_minterm; }
-    // bit ±æÀÌ¿¡ ¸ÂÃá 2Áø¼ö ¹®ÀÚ¿­ ¹İÈ¯
+    // bit ê¸¸ì´ì— ë§ì¶˜ 2ì§„ìˆ˜ ë¬¸ìì—´ ë°˜í™˜
     string get_bin_term(int bit) const {
         string result;
-        // »óÀ§ ºñÆ®ºÎÅÍ °Ë»çÇÏ¿© '1' ¶Ç´Â '0' Ãß°¡
+        // ìƒìœ„ ë¹„íŠ¸ë¶€í„° ê²€ì‚¬í•˜ì—¬ '1' ë˜ëŠ” '0' ì¶”ê°€
         for (int i = bit - 1; i >= 0; --i) {
             result += (term & (1 << i)) ? '1' : '0';
         }
         return result;
     }
 
-    bool is_prime;  // prime implicantÀÎÁö Ç¥½Ã
+    bool is_prime;  // prime implicantì¸ì§€ í‘œì‹œ
 
 private:
     bool is_minterm;  // true: minterm, false: don't care
-    int term;         // term °ª
+    int term;         // term ê°’
 };
 
 // -----------------------------
-// Implement Å¬·¡½º
-// - Quine-McCluskey combine °úÁ¤À» °ÅÃÄ ³ª¿Â implicant(ÁıÇÕ)
-// - mask: '-' À§Ä¡ Ç¥½Ã ºñÆ®
-// - terms: °áÇÕµÈ Term °´Ã¼µé
-// - only_dont_care: don't care¸¸ Æ÷ÇÔ ¿©ºÎ
+// Implement í´ë˜ìŠ¤
+// - Quine-McCluskey combine ê³¼ì •ì„ ê±°ì³ ë‚˜ì˜¨ implicant(ì§‘í•©)
+// - mask: '-' ìœ„ì¹˜ í‘œì‹œ ë¹„íŠ¸
+// - terms: ê²°í•©ëœ Term ê°ì²´ë“¤
+// - only_dont_care: don't careë§Œ í¬í•¨ ì—¬ë¶€
 // -----------------------------
 class Implement {
 public:
-    // ´ÜÀÏ term »ı¼ºÀÚ: mask=0, prime implicant ÃÊ±â ÇüÅÂ
+    // ë‹¨ì¼ term ìƒì„±ì: mask=0, prime implicant ì´ˆê¸° í˜•íƒœ
     Implement(int mask, Term term)
         : mask(mask), only_dont_care(!term.get_is_minterm()), is_prime(true) {
         terms.push_back(term);
     }
-    // µÎ term °áÇÕ »ı¼ºÀÚ: mask¿¡ °áÇÕµÈ ºñÆ® À§Ä¡ Ç¥½Ã
+    // ë‘ term ê²°í•© ìƒì„±ì: maskì— ê²°í•©ëœ ë¹„íŠ¸ ìœ„ì¹˜ í‘œì‹œ
     Implement(int mask, Term term1, Term term2)
         : mask(mask), only_dont_care(!term1.get_is_minterm() && !term2.get_is_minterm()), is_prime(true) {
         terms.push_back(term1);
         terms.push_back(term2);
     }
-    // ´ÙÁß term °áÇÕ »ı¼ºÀÚ: vector·Î ¹ŞÀº µÎ ±×·ì °áÇÕ
+    // ë‹¤ì¤‘ term ê²°í•© ìƒì„±ì: vectorë¡œ ë°›ì€ ë‘ ê·¸ë£¹ ê²°í•©
     Implement(int mask, vector<Term> terms1, vector<Term> terms2)
         : mask(mask), only_dont_care(true), is_prime(true) {
-        // terms1°ú terms2 ÇÕÄ¡±â
+        // terms1ê³¼ terms2 í•©ì¹˜ê¸°
         terms.insert(terms.end(), terms1.begin(), terms1.end());
         terms.insert(terms.end(), terms2.begin(), terms2.end());
-        // ÇÏ³ª¶óµµ mintermÀÌ Æ÷ÇÔµÇ¸é only_dont_care=false
+        // í•˜ë‚˜ë¼ë„ mintermì´ í¬í•¨ë˜ë©´ only_dont_care=false
         for (auto& t : terms) {
             if (t.get_is_minterm()) {
                 only_dont_care = false;
@@ -80,58 +80,58 @@ public:
     }
     ~Implement() {}
 
-    // °áÇÕµÈ Term º¤ÅÍ ¹İÈ¯
+    // ê²°í•©ëœ Term ë²¡í„° ë°˜í™˜
     vector<Term> get_terms() const { return terms; }
-    // mask ¹İÈ¯
+    // mask ë°˜í™˜
     int get_mask() const { return mask; }
-    // ¿ÀÁ÷ don't care¸¸ Æ÷ÇÔÇÏ´ÂÁö ¹İÈ¯
+    // ì˜¤ì§ don't careë§Œ í¬í•¨í•˜ëŠ”ì§€ ë°˜í™˜
     bool get_only_dont_care() const { return only_dont_care; }
 
-    bool is_prime;  // prime implicant ¿©ºÎ
+    bool is_prime;  // prime implicant ì—¬ë¶€
 
-    // °°Àº implicantÀÎÁö ºñ±³ (mask¿Í ´ëÇ¥ term °ª ÀÏÄ¡)
+    // ê°™ì€ implicantì¸ì§€ ë¹„êµ (maskì™€ ëŒ€í‘œ term ê°’ ì¼ì¹˜)
     bool operator==(Implement& other) {
         return mask == other.mask
             && ((terms[0].get_term() & ~mask) == (other.terms[0].get_term() & ~other.mask));
     }
 
-    // µÎ implicant¸¦ combine °¡´É ¿©ºÎ ÆÇ´Ü
+    // ë‘ implicantë¥¼ combine ê°€ëŠ¥ ì—¬ë¶€ íŒë‹¨
     friend bool CanCombine(Implement& a, Implement& b);
-    // Áßº¹ prime implicant Á¦°Å ÇÔ¼ö
+    // ì¤‘ë³µ prime implicant ì œê±° í•¨ìˆ˜
     friend void removeRedundantTerms(vector<Implement>& prime_impls);
 
 private:
-    vector<Term> terms;    // °áÇÕµÈ termµé
-    int mask;              // '-' À§Ä¡ ºñÆ®¸¶½ºÅ©
-    bool only_dont_care;   // don't care¸¸ Æ÷ÇÔ ¿©ºÎ
+    vector<Term> terms;    // ê²°í•©ëœ termë“¤
+    int mask;              // '-' ìœ„ì¹˜ ë¹„íŠ¸ë§ˆìŠ¤í¬
+    bool only_dont_care;   // don't careë§Œ í¬í•¨ ì—¬ë¶€
 };
 
 // -----------------------------
-// CanCombine ÇÔ¼ö
-// - mask°¡ °°°í, µÎ termÀÇ Â÷ÀÌ°¡ Á¤È®È÷ ÇÑ ºñÆ®ÀÎ °æ¿ì¿¡¸¸ true
+// CanCombine í•¨ìˆ˜
+// - maskê°€ ê°™ê³ , ë‘ termì˜ ì°¨ì´ê°€ ì •í™•íˆ í•œ ë¹„íŠ¸ì¸ ê²½ìš°ì—ë§Œ true
 // -----------------------------
 bool CanCombine(Implement& a, Implement& b) {
     if (a.mask != b.mask)
         return false;
     int val_a = a.terms[0].get_term();
     int val_b = b.terms[0].get_term();
-    int diff = (val_a ^ val_b) & ~a.mask;  // '-' ºñÆ® Á¦¿Ü
-    // diff°¡ 0ÀÌ ¾Æ´Ï°í, ÇÑ ºñÆ®¸¸ setÀÎÁö È®ÀÎ
+    int diff = (val_a ^ val_b) & ~a.mask;  // '-' ë¹„íŠ¸ ì œì™¸
+    // diffê°€ 0ì´ ì•„ë‹ˆê³ , í•œ ë¹„íŠ¸ë§Œ setì¸ì§€ í™•ì¸
     return diff != 0 && ((diff & (diff - 1)) == 0);
 }
 
 // -----------------------------
-// removeRedundantTerms ÇÔ¼ö
-// - prime implicant ¸®½ºÆ®¿¡¼­ Áßº¹ Á¦°Å
+// removeRedundantTerms í•¨ìˆ˜
+// - prime implicant ë¦¬ìŠ¤íŠ¸ì—ì„œ ì¤‘ë³µ ì œê±°
 // -----------------------------
 void removeRedundantTerms(vector<Implement>& prime_impls) {
-    // °¢ implicantÀÇ terms¸¦ Á¤·Ä(ºñ±³ ¿ëÀÌÇÏ°Ô)
+    // ê° implicantì˜ termsë¥¼ ì •ë ¬(ë¹„êµ ìš©ì´í•˜ê²Œ)
     for (auto& impl : prime_impls) {
         sort(impl.terms.begin(), impl.terms.end(), [](Term& a, Term& b) {
             return a.get_term() < b.get_term();
             });
     }
-    // mask, term ¼øÀ¸·Î ÀüÃ¼ implicant Á¤·Ä
+    // mask, term ìˆœìœ¼ë¡œ ì „ì²´ implicant ì •ë ¬
     sort(prime_impls.begin(), prime_impls.end(), [](const Implement& a, const Implement& b) {
         if (a.mask != b.mask)
             return a.mask < b.mask;
@@ -144,7 +144,7 @@ void removeRedundantTerms(vector<Implement>& prime_impls) {
         }
         return ta.size() < tb.size();
         });
-    // unique¸¦ ÀÌ¿ëÇØ µ¿ÀÏÇÑ implicant Á¦°Å
+    // uniqueë¥¼ ì´ìš©í•´ ë™ì¼í•œ implicant ì œê±°
     auto new_end = unique(prime_impls.begin(), prime_impls.end(), [](const Implement& a, const Implement& b) {
         if (a.mask != b.mask) return false;
         if (a.terms.size() != b.terms.size()) return false;
@@ -158,10 +158,10 @@ void removeRedundantTerms(vector<Implement>& prime_impls) {
 }
 
 // -----------------------------
-// generateCoverChart ÇÔ¼ö
-// - prime implicant(P) vs minterm(M) ¸ÅÇÎ Â÷Æ® »ı¼º
-// - chart[p][m] = true ÀÌ¸é P implicant°¡ m mintermÀ» Ä¿¹ö
-// - coverMap¿¡ implicant ÀÎµ¦½º´ç Ä¿¹öµÇ´Â minterm ÀÎµ¦½º ÀúÀå
+// generateCoverChart í•¨ìˆ˜
+// - prime implicant(P) vs minterm(M) ë§¤í•‘ ì°¨íŠ¸ ìƒì„±
+// - chart[p][m] = true ì´ë©´ P implicantê°€ m mintermì„ ì»¤ë²„
+// - coverMapì— implicant ì¸ë±ìŠ¤ë‹¹ ì»¤ë²„ë˜ëŠ” minterm ì¸ë±ìŠ¤ ì €ì¥
 // -----------------------------
 void generateCoverChart(
     const vector<Implement>& primeImpls,
@@ -174,13 +174,13 @@ void generateCoverChart(
     chart.assign(P, vector<bool>(M, false));
     coverMap.clear();
 
-    // ¸ğµç implicant¿Í minterm ½Ö °Ë»ç
+    // ëª¨ë“  implicantì™€ minterm ìŒ ê²€ì‚¬
     for (int i = 0; i < P; ++i) {
         int mask = primeImpls[i].get_mask();
         int val = primeImpls[i].get_terms()[0].get_term();
         for (int j = 0; j < M; ++j) {
             int m = minterms[j].get_term();
-            // mask Á¦¿Ü ºñÆ®°¡ °°À¸¸é Ä¿¹ö
+            // mask ì œì™¸ ë¹„íŠ¸ê°€ ê°™ìœ¼ë©´ ì»¤ë²„
             if ((m & ~mask) == (val & ~mask)) {
                 chart[i][j] = true;
                 coverMap[i].push_back(j);
@@ -190,9 +190,9 @@ void generateCoverChart(
 }
 
 // -----------------------------
-// findEssentialPIs ÇÔ¼ö
-// - Â÷Æ®¿¡¼­ ²À ÇÊ¿äÇÑ(essential) prime implicant ÀÎµ¦½º ¹İÈ¯
-// - °¢ mintermÀÌ ¿ÀÁ÷ ÇÏ³ªÀÇ implicant¿¡¸¸ Ä¿¹öµÇ¸é ±× implicant´Â essential
+// findEssentialPIs í•¨ìˆ˜
+// - ì°¨íŠ¸ì—ì„œ ê¼­ í•„ìš”í•œ(essential) prime implicant ì¸ë±ìŠ¤ ë°˜í™˜
+// - ê° mintermì´ ì˜¤ì§ í•˜ë‚˜ì˜ implicantì—ë§Œ ì»¤ë²„ë˜ë©´ ê·¸ implicantëŠ” essential
 // -----------------------------
 vector<int> findEssentialPIs(const vector<vector<bool>>& chart) {
     int P = chart.size();
@@ -200,7 +200,7 @@ vector<int> findEssentialPIs(const vector<vector<bool>>& chart) {
     int M = chart[0].size();
     vector<bool> isEssential(P, false);
 
-    // °¢ ÄÃ·³(minterm)¿¡ ´ëÇØ
+    // ê° ì»¬ëŸ¼(minterm)ì— ëŒ€í•´
     for (int j = 0; j < M; ++j) {
         int count = 0, last = -1;
         for (int i = 0; i < P; ++i) {
@@ -209,12 +209,12 @@ vector<int> findEssentialPIs(const vector<vector<bool>>& chart) {
                 last = i;
             }
         }
-        // ¿ÀÁ÷ ÇÏ³ªÀÇ implicant°¡ Ä¿¹öÇÏ¸é essential Ç¥½Ã
+        // ì˜¤ì§ í•˜ë‚˜ì˜ implicantê°€ ì»¤ë²„í•˜ë©´ essential í‘œì‹œ
         if (count == 1)
             isEssential[last] = true;
     }
 
-    // essential ÀÎµ¦½º ¸®½ºÆ® ¹İÈ¯
+    // essential ì¸ë±ìŠ¤ ë¦¬ìŠ¤íŠ¸ ë°˜í™˜
     vector<int> result;
     for (int i = 0; i < P; ++i)
         if (isEssential[i]) result.push_back(i);
@@ -222,8 +222,8 @@ vector<int> findEssentialPIs(const vector<vector<bool>>& chart) {
 }
 
 // -----------------------------
-// removeEssentialCoverage ÇÔ¼ö
-// - essential implicant°¡ Ä¿¹öÇÏ´Â minterm Á¦°Å(Ä¿¹ö Â÷Æ®¿¡¼­ false·Î ¼³Á¤)
+// removeEssentialCoverage í•¨ìˆ˜
+// - essential implicantê°€ ì»¤ë²„í•˜ëŠ” minterm ì œê±°(ì»¤ë²„ ì°¨íŠ¸ì—ì„œ falseë¡œ ì„¤ì •)
 // -----------------------------
 void removeEssentialCoverage(
     vector<vector<bool>>& chart,
@@ -234,24 +234,24 @@ void removeEssentialCoverage(
         auto it = coverMap.find(pi);
         if (it == coverMap.end()) continue;
         for (int col : it->second) {
-            // ¸ğµç implicant Çà¿¡¼­ ÇØ´ç minterm(col) false Ã³¸®
+            // ëª¨ë“  implicant í–‰ì—ì„œ í•´ë‹¹ minterm(col) false ì²˜ë¦¬
             for (auto& row : chart) row[col] = false;
         }
     }
 }
 
 // -----------------------------
-// buildPetrick ÇÔ¼ö
-// - ³²Àº ¹ÌÄ¿¹ö(minterms) ÄÃ·³¿¡ ´ëÇØ Petrick ¹æ¹ıÀ¸·Î Á¶ÇÕ »ı¼º
-// - sums: °¢ ¹ÌÄ¿¹ö mintermÀ» Ä¿¹öÇÏ´Â implicant ÀÎµ¦½º ¸®½ºÆ®
-// - products: °¡´ÉÇÑ implicant Á¶ÇÕÀÇ ÁıÇÕ(ÁıÇÕ) »ı¼º ¹× Èí¼ö ¹ıÄ¢À¸·Î Á¤¸®
+// buildPetrick í•¨ìˆ˜
+// - ë‚¨ì€ ë¯¸ì»¤ë²„(minterms) ì»¬ëŸ¼ì— ëŒ€í•´ Petrick ë°©ë²•ìœ¼ë¡œ ì¡°í•© ìƒì„±
+// - sums: ê° ë¯¸ì»¤ë²„ mintermì„ ì»¤ë²„í•˜ëŠ” implicant ì¸ë±ìŠ¤ ë¦¬ìŠ¤íŠ¸
+// - products: ê°€ëŠ¥í•œ implicant ì¡°í•©ì˜ ì§‘í•©(ì§‘í•©) ìƒì„± ë° í¡ìˆ˜ ë²•ì¹™ìœ¼ë¡œ ì •ë¦¬
 // -----------------------------
 vector<vector<int>> buildPetrick(const vector<vector<bool>>& chart) {
     vector<vector<int>> sums;
     int P = chart.size();
     int M = chart[0].size();
 
-    // °¢ ¹ÌÄ¿¹ö ÄÃ·³¿¡ ´ëÇØ ¼öÁı
+    // ê° ë¯¸ì»¤ë²„ ì»¬ëŸ¼ì— ëŒ€í•´ ìˆ˜ì§‘
     for (int j = 0; j < M; ++j) {
         vector<int> coverers;
         for (int i = 0; i < P; ++i)
@@ -260,11 +260,11 @@ vector<vector<int>> buildPetrick(const vector<vector<bool>>& chart) {
     }
     if (sums.empty()) return {};
 
-    // Ã¹ ¹øÂ° sumÀ» ÃÊ±â products·Î
+    // ì²« ë²ˆì§¸ sumì„ ì´ˆê¸° productsë¡œ
     vector<set<int>> products;
     for (int pi : sums[0]) products.push_back({ pi });
 
-    // ³ª¸ÓÁö sums¿Í °ö¼À È®Àå
+    // ë‚˜ë¨¸ì§€ sumsì™€ ê³±ì…ˆ í™•ì¥
     for (int k = 1; k < sums.size(); ++k) {
         vector<set<int>> next;
         for (auto& prod : products) {
@@ -274,7 +274,7 @@ vector<vector<int>> buildPetrick(const vector<vector<bool>>& chart) {
                 next.push_back(np);
             }
         }
-        // Èí¼ö ¹ıÄ¢ Àû¿ë: ´Ù¸¥ ÁıÇÕÀ» Æ÷ÇÔÇÏ´Â °æ¿ì Á¦°Å
+        // í¡ìˆ˜ ë²•ì¹™ ì ìš©: ë‹¤ë¥¸ ì§‘í•©ì„ í¬í•¨í•˜ëŠ” ê²½ìš° ì œê±°
         vector<set<int>> filtered;
         for (auto& s : next) {
             bool absorbed = false;
@@ -289,15 +289,15 @@ vector<vector<int>> buildPetrick(const vector<vector<bool>>& chart) {
         products = move(filtered);
     }
 
-    // °á°ú¸¦ vector<vector<int>>·Î º¯È¯
+    // ê²°ê³¼ë¥¼ vector<vector<int>>ë¡œ ë³€í™˜
     vector<vector<int>> combos;
     for (auto& s : products) combos.emplace_back(s.begin(), s.end());
     return combos;
 }
 
 // -----------------------------
-// selectMinCombination ÇÔ¼ö
-// - Petrick Á¶ÇÕ Áß ÃÖ¼Ò Å©±â(implicant °³¼ö) Á¶ÇÕ ¼±ÅÃ
+// selectMinCombination í•¨ìˆ˜
+// - Petrick ì¡°í•© ì¤‘ ìµœì†Œ í¬ê¸°(implicant ê°œìˆ˜) ì¡°í•© ì„ íƒ
 // -----------------------------
 vector<int> selectMinCombination(const vector<vector<int>>& combos) {
     size_t best = numeric_limits<size_t>::max();
@@ -309,16 +309,16 @@ vector<int> selectMinCombination(const vector<vector<int>>& combos) {
 }
 
 // -----------------------------
-// main ÇÔ¼ö
-// 1) ÀÔ·Â ÆÄÀÏ ÀĞ¾î bit ¼ö¿Í minterm/don't care ¸ñ·Ï ÆÄ½Ì
-// 2) 1Â÷ implicant ±×·ì »ı¼º ¹× prime implicant Ã£±â
-// 3) ¹İº¹ °áÇÕ(combine)ÇÏ¿© prime implicant ¼öÁı
-// 4) Áßº¹ Á¦°Å ¹× don't care Àü¿ë Á¦°Å
-// 5) cover chart »ı¼º, essential °è»ê, Petrick ¹æ¹ı Àû¿ë
-// 6) °á°ú(result.txt)¿¡ ÆĞÅÏ ¹× Æ®·£Áö½ºÅÍ ºñ¿ë Ãâ·Â
+// main í•¨ìˆ˜
+// 1) ì…ë ¥ íŒŒì¼ ì½ì–´ bit ìˆ˜ì™€ minterm/don't care ëª©ë¡ íŒŒì‹±
+// 2) 1ì°¨ implicant ê·¸ë£¹ ìƒì„± ë° prime implicant ì°¾ê¸°
+// 3) ë°˜ë³µ ê²°í•©(combine)í•˜ì—¬ prime implicant ìˆ˜ì§‘
+// 4) ì¤‘ë³µ ì œê±° ë° don't care ì „ìš© ì œê±°
+// 5) cover chart ìƒì„±, essential ê³„ì‚°, Petrick ë°©ë²• ì ìš©
+// 6) ê²°ê³¼(result.txt)ì— íŒ¨í„´ ë° íŠ¸ëœì§€ìŠ¤í„° ë¹„ìš© ì¶œë ¥
 // -----------------------------
 int main() {
-    // ÀÔ·Â ÆÄÀÏ ¿ÀÇÂ ¹× Ã¹ ÁÙ(bit ¼ö) ÀĞ±â
+    // ì…ë ¥ íŒŒì¼ ì˜¤í”ˆ ë° ì²« ì¤„(bit ìˆ˜) ì½ê¸°
     ifstream infile("input_minterm.txt");
     string line;
     getline(infile, line);
@@ -328,7 +328,7 @@ int main() {
     vector<vector<Implement>> groups(1);
     vector<Implement> prime_impls;
 
-    // ³ª¸ÓÁö ÁÙ: 'm 0101' ¶Ç´Â 'd 0110' ÇüÅÂ·Î term Ãß°¡
+    // ë‚˜ë¨¸ì§€ ì¤„: 'm 0101' ë˜ëŠ” 'd 0110' í˜•íƒœë¡œ term ì¶”ê°€
     while (getline(infile, line)) {
         bool is_m = (line[0] == 'm');
         int val = stoi(line.substr(2), nullptr, 2);
@@ -336,22 +336,22 @@ int main() {
     }
     infile.close();
 
-    // ÃÊ±â combine: ÇÑ ºñÆ® Â÷ÀÌÀÎ pair¸¦ groups[0]¿¡ Ãß°¡
+    // ì´ˆê¸° combine: í•œ ë¹„íŠ¸ ì°¨ì´ì¸ pairë¥¼ groups[0]ì— ì¶”ê°€
     for (int i = 0; i < terms.size(); ++i) {
         for (int j = i + 1; j < terms.size(); ++j) {
             int diff = terms[i].get_term() ^ terms[j].get_term();
-            // diff°¡ ÇÑ ºñÆ®¸¸ ´Ù¸£¸é °áÇÕ
+            // diffê°€ í•œ ë¹„íŠ¸ë§Œ ë‹¤ë¥´ë©´ ê²°í•©
             if (!(diff & (diff - 1))) {
                 groups[0].emplace_back(diff, terms[i], terms[j]);
                 terms[i].is_prime = terms[j].is_prime = false;
             }
         }
-        // combineµÇÁö ¾Ê°í is_prime ³²À¸¸é prime_impls¿¡ Ãß°¡
+        // combineë˜ì§€ ì•Šê³  is_prime ë‚¨ìœ¼ë©´ prime_implsì— ì¶”ê°€
         if (terms[i].is_prime)
             prime_impls.emplace_back(0, terms[i]);
     }
 
-    // ¹İº¹ °áÇÕ: »õ ±×·ìÀÌ ¾øÀ» ¶§±îÁö
+    // ë°˜ë³µ ê²°í•©: ìƒˆ ê·¸ë£¹ì´ ì—†ì„ ë•Œê¹Œì§€
     bool changed;
     int idx = 0;
     do {
@@ -359,11 +359,11 @@ int main() {
         vector<Implement> next_group;
         auto& current = groups[idx];
 
-        // °¢ pair¿¡ ´ëÇØ combine °¡´ÉÇÑÁö °Ë»ç
+        // ê° pairì— ëŒ€í•´ combine ê°€ëŠ¥í•œì§€ ê²€ì‚¬
         for (int i = 0; i < current.size(); ++i) {
             for (int j = i + 1; j < current.size(); ++j) {
                 if (CanCombine(current[i], current[j])) {
-                    // °áÇÕ ºñÆ® Ã£°í »õ·Î¿î mask °è»ê
+                    // ê²°í•© ë¹„íŠ¸ ì°¾ê³  ìƒˆë¡œìš´ mask ê³„ì‚°
                     vector<Term> t1 = current[i].get_terms();
                     vector<Term> t2 = current[j].get_terms();
                     int diff = 0;
@@ -380,7 +380,7 @@ int main() {
                 }
             }
         }
-        // Çö ±×·ìÀÇ prime implicant Ãß°¡
+        // í˜„ ê·¸ë£¹ì˜ prime implicant ì¶”ê°€
         for (auto& impl : current)
             if (impl.is_prime)
                 prime_impls.push_back(impl);
@@ -389,42 +389,42 @@ int main() {
         idx++;
     } while (changed);
 
-    // Áßº¹ prime implicant Á¦°Å
+    // ì¤‘ë³µ prime implicant ì œê±°
     removeRedundantTerms(prime_impls);
-    // don't care Àü¿ë implicant Á¦°Å
+    // don't care ì „ìš© implicant ì œê±°
     for (int i = prime_impls.size() - 1; i >= 0; --i)
         if (prime_impls[i].get_only_dont_care())
             prime_impls.erase(prime_impls.begin() + i);
 
-    // ½ÇÁ¦ minterm ¸®½ºÆ®·Î ÇÊÅÍ¸µ
+    // ì‹¤ì œ minterm ë¦¬ìŠ¤íŠ¸ë¡œ í•„í„°ë§
     for (int i = terms.size() - 1; i >= 0; --i)
         if (!terms[i].get_is_minterm())
             terms.erase(terms.begin() + i);
 
-    // cover chart »ı¼º
+    // cover chart ìƒì„±
     vector<vector<bool>> chart;
     map<int, vector<int>> coverMap;
     generateCoverChart(prime_impls, terms, chart, coverMap);
 
-    // essential prime implicant Ã£±â
+    // essential prime implicant ì°¾ê¸°
     vector<int> essential = findEssentialPIs(chart);
     cout << "Essential Prime Implicants indices: ";
     for (int pi : essential)
         cout << prime_impls[pi].get_terms()[0].get_bin_term(bit) << " ";
     cout << endl;
 
-    // essential Ä¿¹ö Á¦°Å
+    // essential ì»¤ë²„ ì œê±°
     removeEssentialCoverage(chart, coverMap, essential);
 
-    // Petrick ¹æ¹ıÀ¸·Î Ãß°¡ implicant ¼±ÅÃ
+    // Petrick ë°©ë²•ìœ¼ë¡œ ì¶”ê°€ implicant ì„ íƒ
     auto combos = buildPetrick(chart);
     auto petrickSel = selectMinCombination(combos);
 
-    // ÃÖÁ¾ implicant ÀÎµ¦½º ÁıÇÕ
+    // ìµœì¢… implicant ì¸ë±ìŠ¤ ì§‘í•©
     set<int> finalSet(essential.begin(), essential.end());
     finalSet.insert(petrickSel.begin(), petrickSel.end());
 
-    // °á°ú ÆÄÀÏ¿¡ ÆĞÅÏ ¹× Æ®·£Áö½ºÅÍ ºñ¿ë °è»ê
+    // ê²°ê³¼ íŒŒì¼ì— íŒ¨í„´ ë° íŠ¸ëœì§€ìŠ¤í„° ë¹„ìš© ê³„ì‚°
     ofstream fout("result.txt");
     int totalCost = 0;
     vector<bool> inv_flag(bit, false);
@@ -443,15 +443,15 @@ int main() {
                 pattern.push_back('0');
                 if (!inv_flag[bit - b - 1]) {
                     inv_flag[bit - b - 1] = true;
-                    totalCost += 2; // ÀÎ¹öÅÍ ºñ¿ë
+                    totalCost += 2; // ì¸ë²„í„° ë¹„ìš©
                 }
             }
         }
         fout << pattern << "\n";
         int dashCount = bitset<64>(mask).count();
-        if ((bit - dashCount) > 1) totalCost += (2 * (bit - dashCount) + 2); // AND °ÔÀÌÆ® ºñ¿ë
+        if ((bit - dashCount) > 1) totalCost += (2 * (bit - dashCount) + 2); // AND ê²Œì´íŠ¸ ë¹„ìš©
     }
-    if(finalSet.size()>1) totalCost += (2 * finalSet.size() + 2); // ÃÖÁ¾ OR °ÔÀÌÆ® ºñ¿ë
+    if(finalSet.size()>1) totalCost += (2 * finalSet.size() + 2); // ìµœì¢… OR ê²Œì´íŠ¸ ë¹„ìš©
     fout << "Cost (# of transistors): " << totalCost << "\n";
     fout.close();
 
